@@ -6,6 +6,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
 bot = telebot.TeleBot(token=BOT_TOKEN)
 
 is_waiting = False
+bot_number = None
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -27,8 +28,18 @@ def start_game(message):
 
 @bot.message_handler(content_types=['text'])
 def answer(message):
-    global is_waiting
+    global is_waiting, bot_number
     if is_waiting and message.text == 'ready':
-        pass
+        bot_number = 1
+        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type 'yes' or 'no'.")
+        is_waiting = False
+    elif message.text == 'no' and bot_number is not None:
+        bot_number += 1
+        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type 'yes' or 'no'.")
+    elif message.text == 'yes' and bot_number is not None:
+        bot.send_message(message.chat.id, f"Hooray I guessed it! To start new game type /start_game")
+        bot_number = None
+    else:
+        bot.send_message(message.chat.id, f"To start new game type /start_game")
 
 bot.polling(non_stop=True, interval=0)
