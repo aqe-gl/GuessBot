@@ -7,6 +7,11 @@ bot = telebot.TeleBot(token=BOT_TOKEN)
 
 is_waiting = False
 bot_number = None
+left = None # start of range
+right = None # end of range
+
+def middle(left, right):
+    return int((right - left) / 2 + left)
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -22,23 +27,37 @@ def help(message):
 
 @bot.message_handler(commands=['start_game'])
 def start_game(message):
-    global is_waiting
+    global is_waiting, left, right
     is_waiting = True
-    bot.send_message(message.chat.id, "Think of a number 1-100 and type 'ready'. Ill try to guess it.")
+    bot.send_message(message.chat.id, "Whats the smallest number you can think of?")
 
 @bot.message_handler(content_types=['text'])
 def answer(message):
-    global is_waiting, bot_number
+    global is_waiting, bot_number, left, right
     if is_waiting and message.text == 'ready':
-        bot_number = 1
-        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type 'yes' or 'no'.")
+        bot_number = middle(left, right)
+        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type '>' or '<' or '='.")
         is_waiting = False
-    elif message.text == 'no' and bot_number is not None:
-        bot_number += 1
-        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type 'yes' or 'no'.")
-    elif message.text == 'yes' and bot_number is not None:
+    elif message.text == '<' and bot_number is not None:
+        right = bot_number - 1
+        bot_number = middle(left, right)
+        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type '>' or '<' or '='.")
+    elif message.text == '>' and bot_number is not None:
+        left =  bot_number + 1
+        bot_number = middle(left, right)
+        bot.send_message(message.chat.id, f"Im thinking it is: {bot_number}. Type '>' or '<' or '='.")
+    elif message.text == '=' and bot_number is not None:
+        left = None
+        right = None
         bot.send_message(message.chat.id, f"Hooray I guessed it! To start new game type /start_game")
         bot_number = None
+    elif message.text.isdigit() and left is None:
+        left = int(message.text)
+        bot.send_message(message.chat.id, "Whats the biggest number you can think of?")
+    elif message.text.isdigit() and right is None:
+        right = int(message.text)
+        bot.send_message(message.chat.id, f"Think of a number {left}-{right} and type 'ready'. Ill try to guess it.")
+
     else:
         bot.send_message(message.chat.id, f"To start new game type /start_game")
 
